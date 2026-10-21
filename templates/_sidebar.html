@@ -1,0 +1,13 @@
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-mark">◆</span> Profiling Agent</div>
+    <nav>
+      <a class="nav-item {{ 'active' if active == 'profiling' }}" href="{{ url_for('main') }}"><span class="ico">▤</span> Data Profiling</a>
+      <a class="nav-item {{ 'active' if active == 'pipeline' }}" href="{{ url_for('pipeline') }}"><span class="ico">◷</span> Pipeline
+        <em class="nav-count" id="nav-approvals" hidden></em></a>
+      <span class="nav-item disabled" title="Coming soon"><span class="ico">⇄</span> Mapping → SQL <em>Soon</em></span>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="status-chip" id="ai-status"><i></i><span>Checking AI…</span></div>
+      <div class="status-chip" id="sf-status"><i></i><span>Checking Snowflake…</span></div>
+    </div>
+  </aside>

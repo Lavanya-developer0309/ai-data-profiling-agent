@@ -1,0 +1,11 @@
+      <div class="user-menu">
+        <button type="button" class="avatar" aria-haspopup="true" aria-expanded="false" title="{{ user.full_name }}">
+          {{ user.full_name[:1] | upper }}
+        </button>
+        <div class="menu" hidden>
+          <div class="menu-head"><strong>{{ user.full_name }}</strong><span class="muted">@{{ user.username }}</span></div>
+          <form method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="menu-item" type="submit">Sign out</button>
+          </form>
+        </div>

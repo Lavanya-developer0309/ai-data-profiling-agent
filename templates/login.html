@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Sign in · AI Data Profiling Agent{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block body %}
+<main class="login-layout">
+  <section class="brand-panel" aria-hidden="true">
+    <div class="logo"><span class="logo-mark">◆</span> AI Data Profiling Agent</div>
+    <div class="brand-copy">
+      <h2>Profile any source file in minutes, not days.</h2>
+      <p>Upload a CSV. AI reads the column names and picks the right checks. Snowflake counts every row. You get a client-ready profiling report.</p>
+      <ol class="flow">
+        <li><span>1</span>Upload source file</li>
+        <li><span>2</span>AI proposes checks per column</li>
+        <li><span>3</span>Snowflake runs them on all rows</li>
+        <li><span>4</span>Download the profiling report</li>
+      </ol>
+    </div>
+    <p class="brand-foot">AI decides what to check · SQL does the counting</p>
+  </section>
+
+  <section class="form-panel">
+    <div class="card auth-card" data-mode="{{ mode }}">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tab" data-tab="signin">Sign in</button>
+        <button type="button" role="tab" class="tab" data-tab="register">Create account</button>
+      </div>
+
+      <form method="post" class="auth-form" data-form="signin" novalidate>
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="mode" value="signin">
+        <h1>Welcome back</h1>
+        <p class="muted">Sign in to continue profiling.</p>
+        {% if errors.signin %}<div class="alert" role="alert">{{ errors.signin }}</div>{% endif %}
+        <label class="field">
+          <span>Username</span>
+          <input name="username" autocomplete="username" required autofocus
+                 value="{{ form.username if mode == 'signin' else '' }}">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <div class="pw-wrap">
+            <input name="password" type="password" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" aria-label="Show password">Show</button>
+          </div>
+          <small class="caps-warn" hidden>Caps Lock is on</small>
+        </label>
+        <label class="check"><input type="checkbox" name="remember"> Keep me signed in for 7 days</label>
+        <button class="btn primary block" type="submit"><span class="btn-label">Sign in</span></button>
+        <p class="switch">New here? <a href="#" data-tab="register">Create an account</a></p>
+      </form>
+
+      <form method="post" class="auth-form" data-form="register" novalidate>
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="mode" value="register">
+        <h1>Create your account</h1>
+        <p class="muted">Stored only on this computer.</p>
+        <label class="field {{ 'has-error' if errors.full_name }}">
+          <span>Full name</span>
+          <input name="full_name" autocomplete="name" required value="{{ form.full_name if mode == 'register' else '' }}">
+          <small class="err">{{ errors.full_name }}</small>
+        </label>
+        <label class="field {{ 'has-error' if errors.username }}">
+          <span>Username</span>
+          <input name="username" autocomplete="username" required pattern="[A-Za-z0-9._\-]{3,30}"
+                 value="{{ form.username if mode == 'register' else '' }}">
+          <small class="err">{{ errors.username }}</small>
+        </label>
+        <label class="field {{ 'has-error' if errors.password }}">
+          <span>Password</span>
+          <div class="pw-wrap">
+            <input name="password" type="password" autocomplete="new-password" required minlength="8">
+            <button type="button" class="pw-toggle" aria-label="Show password">Show</button>
+          </div>
+          <div class="strength" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <small class="err">{{ errors.password }}</small>
+          <small class="hint">At least 8 characters, with letters and numbers.</small>
+        </label>
+        <label class="field {{ 'has-error' if errors.confirm }}">
+          <span>Confirm password</span>
+          <input name="confirm" type="password" autocomplete="new-password" required>
+          <small class="err">{{ errors.confirm }}</small>
+        </label>
+        <button class="btn primary block" type="submit"><span class="btn-label">Create account</span></button>
+        <p class="switch">Already have an account? <a href="#" data-tab="signin">Sign in</a></p>
+      </form>
+    </div>
+  </section>
+</main>
+{% endblock %}

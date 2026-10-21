@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body_class %}page-center{% endblock %}
+{% block body %}
+<div class="card narrow">
+  <h1>Something went wrong</h1>
+  <p class="muted">{{ message }}</p>
+  <a class="btn primary" href="{{ url_for('index') }}">Back to start</a>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+# secrets - NEVER commit these
+.env
+*.p8
+*.pem
+rsa_key*
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+.DS_Store
+instance/
+.env.*.bak

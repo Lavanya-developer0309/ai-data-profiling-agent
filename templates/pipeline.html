@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Pipeline · AI Data Profiling Agent{% endblock %}
+{% block body_class %}app-page{% endblock %}
+{% block body %}
+<div class="shell">
+  {% set active = 'pipeline' %}{% include '_sidebar.html' %}
+
+  <div class="content">
+    <header class="topbar">
+      <div>
+        <h1>Pipeline</h1>
+        <p class="muted">S3 → Snowpipe → AI agent (qwen3:8b) → dbt → target. Airflow starts the agent every 10 minutes.</p>
+      </div>
+      {% include '_usermenu.html' %}
+    </header>
+
+    <section class="card" id="approvals-card">
+      <div class="section-head">
+        <div>
+          <h2>Waiting for your approval</h2>
+          <p class="muted small">In <code>APPROVAL_MODE=human</code> the agent asks before every action. In <code>auto</code> mode nothing waits here.</p>
+        </div>
+      </div>
+      <div id="approvals"></div>
+      <details class="recent-answers" id="recent-wrap" hidden>
+        <summary class="muted small">Recently answered</summary>
+        <div id="recent-approvals"></div>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Agent runs</h2>
+          <p class="muted small" id="runs-sub">Click a run to see every decision and the agent's reason.</p>
+        </div>
+        <button type="button" class="btn ghost" id="refresh-runs"><span class="btn-label">Refresh</span></button>
+      </div>
+      <div class="alert" id="runs-error" hidden></div>
+      <div class="table-wrap">
+        <table class="results-table runs-table">
+          <thead><tr><th>Status</th><th>Batch</th><th>Started</th><th class="num">Time</th><th class="num">Steps</th><th>Mode</th><th>Summary</th></tr></thead>
+          <tbody id="runs-body"><tr><td colspan="7" class="muted">Loading from Snowflake…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

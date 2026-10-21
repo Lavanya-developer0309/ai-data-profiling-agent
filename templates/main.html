@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Data Profiling · AI Data Profiling Agent{% endblock %}
+{% block body_class %}app-page{% endblock %}
+{% block body %}
+<div class="shell">
+  {% set active = 'profiling' %}{% include '_sidebar.html' %}
+
+  <div class="content">
+    <header class="topbar">
+      <div>
+        <h1>Data Profiling</h1>
+        <p class="muted">Hi {{ user.full_name.split()[0] }}, upload a source file to start a profiling run.</p>
+      </div>
+      {% include '_usermenu.html' %}
+      </div>
+    </header>
+
+    <ol class="stepper">
+      <li class="current" data-step="1"><span>1</span>Upload</li>
+      <li data-step="2"><span>2</span>AI proposes checks</li>
+      <li data-step="3"><span>3</span>Snowflake runs checks</li>
+      <li data-step="4"><span>4</span>Report</li>
+    </ol>
+
+    <section class="card">
+      <h2>1 · Upload source file</h2>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept=".csv,.txt,.tsv,.psv" hidden>
+        <div class="dz-icon">⇪</div>
+        <strong>Drag and drop a file here, or <u>browse</u></strong>
+        <span class="muted">CSV, TXT or TSV · comma, pipe, tab or semicolon delimited · up to 200 MB</span>
+      </label>
+
+      <div id="file-summary" class="file-summary" hidden>
+        <div class="stats">
+          <div><span class="muted">File</span><strong id="s-name"></strong></div>
+          <div><span class="muted">Size</span><strong id="s-size"></strong></div>
+          <div><span class="muted">Rows</span><strong id="s-rows"></strong></div>
+          <div><span class="muted">Columns</span><strong id="s-cols"></strong></div>
+          <div><span class="muted">Delimiter</span><strong id="s-delim"></strong></div>
+        </div>
+        <h3>Preview <span class="muted">(first 10 rows)</span></h3>
+        <div class="table-wrap"><table id="preview"></table></div>
+        <div class="actions">
+          <button type="button" class="btn ghost" id="clear-file">Choose another file</button>
+          <button type="button" class="btn primary" id="generate">
+            <span class="btn-label">Generate profiling checks with AI →</span>
+          </button>
+        </div>
+        <p class="muted small">AI looks only at the column names and up to 20 sample values per column (SSN / tax id digits are masked) and proposes the checks.</p>
+        <div class="alert" id="upload-error" hidden></div>
+      </div>
+    </section>
+
+    <section class="card" id="rules-section" hidden>
+      <div class="section-head">
+        <div>
+          <h2>2 · Review the proposed checks</h2>
+          <p class="muted small" id="rules-sub"></p>
+        </div>
+        <div class="rules-stats" id="rules-stats"></div>
+      </div>
+      <div class="banner" id="rules-banner"></div>
+      <p class="muted small">Change any type or limit and the checks update. Every column is also always profiled for
+        <strong>null count, distinct values, min / max length and most common values</strong>.</p>
+      <div class="table-wrap rules-wrap">
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th>Column</th><th>Type</th><th>Rules</th><th>Length (min – max)</th><th>Format / allowed values</th><th>Checks that will run</th>
+            </tr>
+          </thead>
+          <tbody id="rules-body"></tbody>
+        </table>
+      </div>
+      <div class="alert" id="rules-error" hidden></div>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="reset-rules">Reset to proposed</button>
+        <button type="button" class="btn primary" id="approve"><span class="btn-label">Approve checks →</span></button>
+      </div>
+      <div class="banner ok approved-row" id="approved" hidden>
+        <span><strong>Checks approved and saved.</strong> Now run them in Snowflake on every row.</span>
+        <button type="button" class="btn primary" id="run-checks"><span class="btn-label">Run checks in Snowflake →</span></button>
+      </div>
+      <div class="alert" id="run-error" hidden></div>
+    </section>
+
+    <section class="card" id="results-section" hidden>
+      <div class="section-head">
+        <div>
+          <h2>3 · Results</h2>
+          <p class="muted small" id="results-sub"></p>
+        </div>
+        <button type="button" class="btn ghost" id="download-csv">Download issues (CSV)</button>
+      </div>
+      <div class="stats results-stats" id="results-stats"></div>
+
+      <h3>Issues found <span class="muted" id="issues-note"></span></h3>
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead><tr><th>Column</th><th>Check</th><th class="num">Failed rows</th><th>% of rows</th><th>Examples</th></tr></thead>
+          <tbody id="issues-body"></tbody>
+        </table>
+      </div>
+      <label class="check show-passed"><input type="checkbox" id="show-passed"> Show passed checks too</label>
+
+      <h3>Column profile</h3>
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead><tr><th>Column</th><th>Type</th><th class="num">Nulls</th><th class="num">Null %</th><th class="num">Distinct</th>
+            <th class="num">Min len</th><th class="num">Max len</th><th>Most common values</th></tr></thead>
+          <tbody id="profile-body"></tbody>
+        </table>
+      </div>
+      <p class="muted small">Every number here is counted by Snowflake SQL on all rows - the AI only chose which checks to run.
+        SSN and tax id values are masked.</p>
+
+      <div class="saved-box" id="saved-box" hidden>
+        <h3 id="saved-title"></h3>
+        <p class="muted small" id="saved-sub"></p>
+        <div class="saved-tables" id="saved-tables"></div>
+        <div class="query-tabs" id="query-tabs"></div>
+        <div class="query-box">
+          <pre id="query-text"></pre>
+          <button type="button" class="btn ghost" id="copy-query">Copy query</button>
+        </div>
+        <p class="muted small">Paste into Snowsight (Projects → Worksheets) and use the download button above the results to export CSV.
+          More queries: <code>sql/02_export_queries.sql</code></p>
+      </div>
+    </section>
+
+    <dialog id="rows-dialog" class="rows-dialog" aria-labelledby="rd-title">
+      <div class="rd-head">
+        <div>
+          <h2 id="rd-title"></h2>
+          <p class="muted small" id="rd-sub"></p>
+        </div>
+        <button type="button" class="btn ghost rd-close" id="rd-close" aria-label="Close">✕</button>
+      </div>
+      <div class="rd-meta" id="rd-meta"></div>
+      <div class="rd-toolbar">
+        <span class="muted small" id="rd-count"></span>
+        <label class="check small"><input type="checkbox" id="rd-all-cols"> Show all columns</label>
+        <button type="button" class="btn ghost" id="rd-csv">Download these rows (CSV)</button>
+      </div>
+      <div class="table-wrap rd-table"><table class="results-table" id="rd-table"></table></div>
+    </dialog>
+
+    <section class="card" id="report-section" hidden>
+      <div class="section-head">
+        <div>
+          <h2>4 · Client report</h2>
+          <p class="muted small">AI writes the summary from the exact results above. Any number it gets wrong is caught and the standard summary is used.</p>
+        </div>
+        <div class="head-actions">
+          <button type="button" class="btn ghost" id="write-summary"><span class="btn-label">Write summary with AI</span></button>
+          <a class="btn primary" id="download-xlsx" href="#">Download Excel report</a>
+        </div>
+      </div>
+      <div class="alert" id="summary-error" hidden></div>
+      <div id="summary" hidden>
+        <div class="banner" id="summary-banner"></div>
+        <h3 class="headline" id="s-headline"></h3>
+        <p id="s-overview"></p>
+        <h3>Findings</h3>
+        <ol class="findings" id="s-findings"></ol>
+        <h3>Next steps</h3>
+        <ol class="next-steps" id="s-steps"></ol>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
