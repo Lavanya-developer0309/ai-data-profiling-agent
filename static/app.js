@@ -698,16 +698,36 @@ if ($("#approvals")) {
     } finally { busy(btn, false, "Refresh"); }
   }
 
+  // the numbers a reviewer looks at before approving the next step
+  function stepFacts(res) {
+    const names = list => list.map(i => `${i.column} (${i.problem_pct}%)`).join(", ") || "none";
+    if (res.problems && res.problems.length) return res.problems.join("; ");
+    if (res.files_found) return `files found: ${res.files_found.join(", ")}`;
+    if (res.files) return res.files.map(f => `${f.file}: ${fmt(f.rows)} rows, ${f.rejected ?? 0} rejected`).join(" · ");
+    if (res.columns_profiled !== undefined)
+      return `${res.columns_profiled} columns profiled · key column breaches: ${names(res.key_column_breaches || [])} · ` +
+             `concerns (>20% bad): ${names(res.concerns || [])} · minor issues: ${res.minor_issues} · ` +
+             `optional columns empty: ${(res.optional_columns || []).length}`;
+    if (res.summary && typeof res.summary === "object")
+      return `dbt: ${Object.entries(res.summary).map(([k, v]) => `${v} ${k}`).join(", ")} · errors: ${(res.errors || []).length}` +
+             ((res.warnings || []).length ? ` · warnings: ${res.warnings.map(w => `${w.test} (${w.failing_rows})`).join(", ")}` : "");
+    if (res.entities)
+      return res.entities.map(e => `${e.entity}: ${fmt(e.source)} source, ${fmt(e.rejected)} rejected, ${fmt(e.loaded)} loaded – ${e.status}`).join(" · ");
+    if (res.moved_to) return `moved to ${res.moved_to}` + (res.raw_rows_removed ? ` · RAW rows removed: ${JSON.stringify(res.raw_rows_removed)}` : "");
+    if (res.justification) return `justification: ${res.justification}`;
+    return "";
+  }
+
   async function toggleRun(run, detail) {
     detail.hidden = !detail.hidden;
-    if (detail.hidden || detail.dataset.loaded) return;
+    if (detail.hidden) return;   // reload every time: a running run keeps adding steps
     const cell = detail.firstChild;
     cell.replaceChildren(el("span", { className: "muted", textContent: "Loading decisions…" }));
     try {
       const { steps } = await api(`/api/pipeline/runs/${encodeURIComponent(run.run_id)}`);
       cell.replaceChildren(el("ul", { className: "timeline" }, steps.map(s => {
         const res = s.result || {};
-        const facts = res.error || res.message || (res.problems && res.problems.join("; ")) || res.summary_replaced && "summary rewritten by code" || "";
+        const facts = res.error || stepFacts(res) || res.message || (res.problems && res.problems.join("; ")) || res.summary_replaced && "summary rewritten by code" || "";
         return el("li", { className: s.verdict === "BLOCKED" ? "blocked" : s.result_ok === false ? "failed" : "" }, [
           el("div", { className: "tl-head" }, [
             el("strong", { textContent: `${s.step_no}. ${s.tool}` }),
@@ -716,7 +736,7 @@ if ($("#approvals")) {
             s.result_ok === false && s.verdict !== "BLOCKED" ? el("span", { className: "sev medium", textContent: "not ok" }) : "",
           ]),
           el("p", { className: "tl-reason", textContent: s.reason ? `why: ${s.reason}` : "" }),
-          facts ? el("p", { className: "tl-facts muted small", textContent: String(facts).slice(0, 300) }) : "",
+          facts ? el("p", { className: "tl-facts muted small", textContent: String(facts).slice(0, 1200) }) : "",
         ]);
       })));
       detail.dataset.loaded = "1";
